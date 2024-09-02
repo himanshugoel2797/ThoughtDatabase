@@ -141,5 +141,26 @@ namespace ThoughtDatabase.Server.Controllers
 			return Ok(ud);
 		}
 
+        [HttpGet("get_datasets")]
+		public IActionResult GetDatasets([FromQuery] string token)
+		{
+			var authToken = token;
+			if (string.IsNullOrWhiteSpace(authToken))
+			{
+				return BadRequest("Auth token must be provided");
+			}
+
+			if (!ServiceUserManager.Instance.AuthenticateToken(authToken))
+			{
+				return Unauthorized();
+			}
+
+			var datasets = ServiceUserManager.Instance.GetUser(authToken)?.Datasets.Select(a => a.Name).ToArray();
+			if (datasets == null)
+			{
+				return BadRequest("Failed to get datasets");
+			}
+			return Ok(datasets);
+		}
 	}
 }

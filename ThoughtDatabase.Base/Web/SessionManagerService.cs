@@ -29,7 +29,7 @@ namespace ThoughtDatabase.Web
 			var request = new AuthRequired(AuthToken);
 			try
 			{
-				var user = await _httpClient.GetFromJsonAsync<UserData>($"{BaseUrl}/api/user/get_user?Token={AuthToken}");
+				var user = await _httpClient.GetFromJsonAsync<UserData>($"{BaseUrl}/api/user/get_user?token={AuthToken}");
 				if (user == null) return false;
 				IsAuthenticated = true;
 				Username = user.Username;
@@ -78,15 +78,28 @@ namespace ThoughtDatabase.Web
 		}
 
 		public async Task<HttpResponseMessage?> Register(string username, string password, bool isAdmin)
-        {
-            var request = new UserRequest(username, password, false);
-            var response = await _httpClient.PostAsJsonAsync($"{BaseUrl}/api/user/register", request);
+		{
+			var request = new UserRequest(username, password, false);
+			var response = await _httpClient.PostAsJsonAsync($"{BaseUrl}/api/user/register", request);
 			if (isAdmin && response.IsSuccessStatusCode && this.IsAdmin)
 			{
 				var adminStatus = new AdminStatus(AuthToken, true, username);
 				response = await _httpClient.PostAsJsonAsync($"{BaseUrl}/api/user/set_admin", adminStatus);
 			}
 			return response;
-        }
-    }
+		}
+
+		public async Task<string[]> GetDatasetNames()
+		{
+			var response = await _httpClient.GetFromJsonAsync<string[]>($"{BaseUrl}/api/user/get_datasets?token={AuthToken}");
+			return response ?? Array.Empty<string>();
+		}
+
+		public async Task<bool> CreateDataset(string name, string description)
+		{
+			var request = new ThoughtDatasetCreateInfo(AuthToken, name, description);
+			var response = await _httpClient.PostAsJsonAsync($"{BaseUrl}/api/dataset/create", request);
+			return response.IsSuccessStatusCode;
+		}
+	}
 }

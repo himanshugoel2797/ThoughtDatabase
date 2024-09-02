@@ -11,11 +11,11 @@ namespace ThoughtDatabase
 	[Serializable]
 	public class FileCollection
 	{
-		private readonly IFileStorageProvider _fileStorageProvider;
+		private readonly FileSystemStorageProvider _fileStorageProvider;
 		private readonly Dictionary<string, string> _fileIdMap = new();
 		private readonly Dictionary<string, string> _fileHashes = new();
 
-		public FileCollection(IFileStorageProvider fileStorageProvider)
+		public FileCollection(FileSystemStorageProvider fileStorageProvider)
 		{
 			_fileStorageProvider = fileStorageProvider;
 		}

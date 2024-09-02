@@ -6,8 +6,20 @@
       "Password": "tentod",
       "IsAdmin": true,
       "DateOfRegistration": "2024-09-01T23:59:54.3790215-04:00",
-      "Datasets": [],
-      "AuthTokens": []
+      "Datasets": [
+        {
+          "Name": "Test",
+          "Description": "desc",
+          "Date": "2024-09-02T18:12:39.6180629-04:00",
+          "StorageProvider": {
+            "BaseDirectory": "Test"
+          },
+          "Collections": []
+        }
+      ],
+      "AuthTokens": [
+        "514cbbaf-c4c5-4713-8b19-142746a4bc30"
+      ]
     }
   ]
 }

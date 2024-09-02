@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace ThoughtDatabase.StorageProviders
 {
-	public class JsonDatasetStorageProvider<T> : IThoughtDatasetStorageProvider where T : IFileSystemStorageProviderFactory
+	public class JsonDatasetStorageProvider
 	{
 		public string BaseDirectory { get; init; }
 		public JsonDatasetStorageProvider(string baseDirectory)
@@ -47,9 +47,9 @@ namespace ThoughtDatabase.StorageProviders
 			File.Delete(Path.Combine(BaseDirectory, "dataset.json"));
 		}
 
-		public IFileStorageProvider CreateFileStorageProvider(string name)
+		public FileSystemStorageProvider CreateFileStorageProvider(string name)
 		{
-			return T.Create(BaseDirectory);
+			return new FileSystemStorageProvider(Path.Combine(BaseDirectory, name));
 		}
 	}
 }

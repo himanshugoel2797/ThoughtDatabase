@@ -17,6 +17,7 @@ namespace ThoughtDatabase
 		public List<ThoughtDataset> Datasets { get; set; } = new();
 		public List<string> AuthTokens { get; set; } = new();
 		private List<string> _tmpTokens = new();
+		private ReaderWriterLockSlim _lock = new();
 
 		public ServiceUser(string username, string password)
 		{
@@ -25,49 +26,102 @@ namespace ThoughtDatabase
 			Password = password;
 		}
 
-		public void AddDataset(string name)
+		public void AddDataset(string name, string description = "")
 		{
-			JsonDatasetStorageProvider<FileSystemStorageProvider> jsonDatasetStorageProvider = new JsonDatasetStorageProvider<FileSystemStorageProvider>(name);
-			var dataset = new ThoughtDataset(jsonDatasetStorageProvider);
-			Datasets.Add(dataset);
+			_lock.EnterWriteLock();
+			try
+			{
+				JsonDatasetStorageProvider jsonDatasetStorageProvider = new JsonDatasetStorageProvider(name);
+				var dataset = new ThoughtDataset(jsonDatasetStorageProvider)
+				{
+					Name = name,
+					Description = description
+				};
+				Datasets.Add(dataset);
+			}
+			finally
+			{
+				_lock.ExitWriteLock();
+			}
 		}
 
 		public void RemoveDataset(ThoughtDataset dataset)
 		{
-			Datasets.Remove(dataset);
-			dataset.Destroy();
+			_lock.EnterWriteLock();
+			try
+			{
+				Datasets.Remove(dataset);
+				dataset.Destroy();
+			}
+			finally
+			{
+				_lock.ExitWriteLock();
+			}
 		}
 
 		public string GenerateToken(bool tmp)
 		{
-			var token = Guid.NewGuid().ToString();
-			if (tmp)
+			_lock.EnterWriteLock();
+			try
 			{
-				_tmpTokens.Add(token);
+				var token = Guid.NewGuid().ToString();
+				if (tmp)
+				{
+					_tmpTokens.Add(token);
+				}
+				else
+				{
+					AuthTokens.Add(token);
+				}
+				return token;
 			}
-			else
+			finally
 			{
-				AuthTokens.Add(token);
+				_lock.ExitWriteLock();
 			}
-			return token;
 		}
 
 		public void RevokeToken(string token)
 		{
-			AuthTokens.Remove(token);
-			_tmpTokens.Remove(token);
+			_lock.EnterWriteLock();
+			try
+			{
+				AuthTokens.Remove(token);
+				_tmpTokens.Remove(token);
+			}
+			finally
+			{
+				_lock.ExitWriteLock();
+			}
 		}
 
 		public bool ValidateToken(string token)
 		{
-			return AuthTokens.Contains(token) || _tmpTokens.Contains(token);
+			_lock.EnterReadLock();
+			try
+			{
+				return AuthTokens.Contains(token) || _tmpTokens.Contains(token);
+			}
+			finally
+			{
+				_lock.ExitReadLock();
+			}
 		}
 
 		public void Destroy()
 		{
-			foreach (var dataset in Datasets)
+			_lock.EnterWriteLock();
+			try
 			{
-				dataset.Destroy();
+				foreach (var dataset in Datasets)
+				{
+					dataset.Destroy();
+				}
+				Datasets.Clear();
+			}
+			finally
+			{
+				_lock.ExitWriteLock();
 			}
 		}
 	}

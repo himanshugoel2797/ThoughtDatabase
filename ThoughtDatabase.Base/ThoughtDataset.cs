@@ -16,11 +16,11 @@ namespace ThoughtDatabase
 		public string Description { get; set; } = "";
 		public DateTime Date { get; set; }
 
-		public IThoughtDatasetStorageProvider StorageProvider { get; set; }
+		public JsonDatasetStorageProvider StorageProvider { get; set; }
 
 		public List<ThoughtCollection> Collections { get; set; } = new();
 
-		public ThoughtDataset(IThoughtDatasetStorageProvider storageProvider)
+		public ThoughtDataset(JsonDatasetStorageProvider storageProvider)
 		{
 			StorageProvider = storageProvider;
 			Date = DateTime.Now;

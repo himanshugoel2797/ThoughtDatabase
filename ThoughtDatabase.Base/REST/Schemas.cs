@@ -17,4 +17,6 @@ namespace ThoughtDatabase.REST
 	public record DeleteUserRequest(string Token, string Username) : AuthRequired(Token);
 
 	public record RegisterAppRequest(string Token, string Name) : AuthRequired(Token);
+
+	public record ThoughtDatasetCreateInfo(string Token, string Name, string? Description) : AuthRequired(Token);
 }

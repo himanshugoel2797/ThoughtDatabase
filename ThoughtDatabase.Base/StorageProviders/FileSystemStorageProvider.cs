@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace ThoughtDatabase.StorageProviders
 {
-	public class FileSystemStorageProvider : IFileStorageProvider, IFileSystemStorageProviderFactory
+	public class FileSystemStorageProvider
 	{
 		public string DirectoryPath { get; init; }
 		public FileSystemStorageProvider(string directoryPath)
@@ -44,11 +44,6 @@ namespace ThoughtDatabase.StorageProviders
 			string path = string.Join(Path.DirectorySeparatorChar, DirectoryPath, fileId);
 			File.WriteAllBytes(path, fileData);
 			return fileId;
-		}
-
-		public static IFileStorageProvider Create(string directoryPath)
-		{
-			return new FileSystemStorageProvider(directoryPath);
 		}
 
 		public void DeleteProvider()

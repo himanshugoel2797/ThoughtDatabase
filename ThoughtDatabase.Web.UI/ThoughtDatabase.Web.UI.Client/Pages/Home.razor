@@ -7,12 +7,64 @@
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
 
-Welcome to your new app.
+@if (_datasets != null)
+{
+	<h3>Datasets</h3>
+	<table style="width:100%">
+		<thead>
+			<tr>
+				<th>Name</th>
+				<th>Description</th>
+				<th>Actions</th>
+			</tr>
+		</thead>
+		<tbody>
+			@foreach (var dataset in _datasets)
+			{
+				<tr>
+					<td>
+						@dataset
+					</td>
+					<td>
+						Description
+					</td>
+					<td>
+						<button class="btn btn-primary" @onclick="@(async ()=>await OnClickDataset(dataset))">Explore</button>
+					</td>
+				</tr>
+			}
+
+			<tr>
+				<td>
+					<input type="text" @bind="_newDatasetName" />
+				</td>
+				<td>
+					<input type="text" @bind="_newDatasetDesc" />
+				</td>
+				<td>
+					<button class="btn btn-primary" @onclick="@OnClickCreateDataset">New Dataset</button>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+}
+else
+{
+	@if (_session.IsAuthenticated)
+	{
+		<p>Loading datasets...</p>
+	}
+	else
+	{
+		<p>Not logged in.</p>
+	}
+}
 
 @code
 {
+	private string[]? _datasets;
+
 	[CascadingParameter]
 	public MainLayout MainLayout { get; set; }
 
@@ -21,9 +73,43 @@ Welcome to your new app.
 		string? tkn = await _localStorage.GetItemAsync<string>("token");
 		if (!_session.IsAuthenticated)
 		{
+			if (!string.IsNullOrWhiteSpace(tkn) && await _session.AuthenticateToken(tkn))
+			{
+				await InvokeAsync(() => StateHasChanged());
+				await MainLayout.Refresh();
+				return;
+			}
+
 			_nav.NavigateTo("login");
 			return;
 		}
+		else
+		{
+			// Get the datasets
+			_datasets = await _session.GetDatasetNames();
+			await InvokeAsync(() => StateHasChanged());
+		}
 		base.OnAfterRender(firstRender);
+	}
+
+	private string _newDatasetName = "", _newDatasetDesc = "";
+	private async Task OnClickCreateDataset(MouseEventArgs e)
+	{
+		if (string.IsNullOrWhiteSpace(_newDatasetName))
+		{
+			return;
+		}
+
+		if (await _session.CreateDataset(_newDatasetName, _newDatasetDesc))
+		{
+			_datasets = await _session.GetDatasetNames();
+			_newDatasetName = "";
+			_newDatasetDesc = "";
+		}
+	}
+
+	private async Task OnClickDataset(string name)
+	{
+		
 	}
 }

@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Collections.Concurrent;
+using System.Text.Json;
 
 namespace ThoughtDatabase
 {
@@ -38,114 +39,173 @@ namespace ThoughtDatabase
 			}
 		}
 
+		public void Save()
+		{
+			Save(SaveFile);
+		}
+
 		public string SaveFile { get; set; } = "users.json";
 		public List<ServiceUser> Users { get; set; } = new();
 		public ServiceUserManager() { }
 
-		private Dictionary<string, string> _authdTokens = new();
+		private ConcurrentDictionary<string, string> _authdTokens = new();
+		private ReaderWriterLockSlim _lock = new();
 
 		public void RegisterUser(string username, string password)
 		{
-			Users.Add(new ServiceUser(username, password));
-			if (Users.Count == 1)
+			_lock.EnterWriteLock();
+			try
 			{
-				Users[0].IsAdmin = true;
+				Users.Add(new ServiceUser(username, password) { IsAdmin = Users.Count == 0 });
+				Save();
 			}
-			Save(SaveFile);
+			finally
+			{
+				_lock.ExitWriteLock();
+			}
 		}
 
 		public string? AuthenticateUser(string username, string password, bool RememberMe)
 		{
-			foreach (var user in Users)
+			_lock.EnterReadLock();
+			try
 			{
-				if (user.Username == username && user.Password == password)
+				foreach (var user in Users)
 				{
-					string token = user.GenerateToken(RememberMe);
-					_authdTokens[token] = username;
-					return token;
+					if (user.Username == username && user.Password == password)
+					{
+						string token = user.GenerateToken(!RememberMe);
+						_authdTokens[token] = username;
+						Save();
+						return token;
+					}
 				}
+			}
+			finally
+			{
+				_lock.ExitReadLock();
 			}
 			return null;
 		}
 
 		public bool AuthenticateToken(string token)
 		{
-			if (_authdTokens.ContainsKey(token))
+			_lock.EnterReadLock();
+			try
 			{
-				return true;
-			}
-			foreach (var user in Users)
-			{
-				if (user.ValidateToken(token))
+				if (_authdTokens.ContainsKey(token))
 				{
-					_authdTokens[user.Username] = token;
 					return true;
 				}
+				foreach (var user in Users)
+				{
+					if (user.ValidateToken(token))
+					{
+						_authdTokens[token] = user.Username;
+						return true;
+					}
+				}
+			}
+			finally
+			{
+				_lock.ExitReadLock();
 			}
 			return false;
 		}
 
 		public void RevokeToken(string token)
 		{
-			if (_authdTokens.ContainsKey(token))
+			_lock.EnterWriteLock();
+			try
 			{
-				var username = _authdTokens[token];
-				var user = Users.First(u => u.Username == username);
-				user.RevokeToken(token);
-				_authdTokens.Remove(token);
+				if (_authdTokens.ContainsKey(token))
+				{
+					var username = _authdTokens[token];
+					var user = Users.First(u => u.Username == username);
+					user.RevokeToken(token);
+					_authdTokens.Remove(token, out _);
 
-				Save(SaveFile);
-				return;
+					Save();
+					return;
+				}
+
+				foreach (var user in Users)
+				{
+					user.RevokeToken(token);
+				}
+				Save();
 			}
-
-			foreach (var user in Users)
+			finally
 			{
-				user.RevokeToken(token);
+				_lock.ExitWriteLock();
 			}
-			Save(SaveFile);
 		}
 
 		public ServiceUser? GetUser(string token)
 		{
-			if (_authdTokens.ContainsKey(token))
+			_lock.EnterReadLock();
+			try
 			{
-				return Users.First(u => u.Username == _authdTokens[token]);
+				if (_authdTokens.ContainsKey(token))
+				{
+					return Users.First(u => u.Username == _authdTokens[token]);
+				}
+			}
+			finally
+			{
+				_lock.ExitReadLock();
 			}
 			return null;
 		}
 
 		public bool DeleteUser(string username, string token)
 		{
-			if (_authdTokens.ContainsKey(token) && (Users.First(u => u.Username == _authdTokens[token]).IsAdmin || _authdTokens[token] == username))
+			_lock.EnterWriteLock();
+			try
 			{
-				var user = Users.First(u => u.Username == username);
-				Users.Remove(user);
-				user.Destroy();
-				Save(SaveFile);
-				return true;
+				if (_authdTokens.ContainsKey(token) && (Users.First(u => u.Username == _authdTokens[token]).IsAdmin || _authdTokens[token] == username))
+				{
+					var user = Users.First(u => u.Username == username);
+					Users.Remove(user);
+					user.Destroy();
+					Save();
+					return true;
+				}
+				else
+				{
+					return false;
+				}
 			}
-			else
+			finally
 			{
-				return false;
+				_lock.ExitWriteLock();
 			}
 		}
 
 		public bool SetAdminStatus(string username, bool isAdmin, string token)
 		{
-			if (_authdTokens.ContainsKey(token) && Users.First(u => u.Username == _authdTokens[token]).IsAdmin)
+			_lock.EnterWriteLock();
+			try
 			{
-				var user = Users.First(u => u.Username == username);
-				if (!isAdmin && user.IsAdmin && Users.Count(u => u.IsAdmin) == 1)
+				if (_authdTokens.ContainsKey(token) && Users.First(u => u.Username == _authdTokens[token]).IsAdmin)
 				{
-					throw new Exception("Cannot remove the last admin");
+					var user = Users.First(u => u.Username == username);
+					if (!isAdmin && user.IsAdmin && Users.Count(u => u.IsAdmin) == 1)
+					{
+						throw new Exception("Cannot remove the last admin");
+					}
+					user.IsAdmin = isAdmin;
+					Save();
+					return true;
 				}
-				user.IsAdmin = isAdmin;
-				Save(SaveFile);
-				return true;
+				else
+				{
+					return false;
+				}
 			}
-			else
+			finally
 			{
-				return false;
+				_lock.ExitWriteLock();
 			}
 		}
 	}
