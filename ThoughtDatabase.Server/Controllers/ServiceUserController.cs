@@ -23,7 +23,6 @@ namespace ThoughtDatabase.Server.Controllers
             {
                 return BadRequest("Username and password must be provided");
             }
-
             if (ServiceUserManager.Instance.Users.Any(u => u.Username == request.Username))
             {
                 return BadRequest("User already exists");
@@ -93,7 +92,7 @@ namespace ThoughtDatabase.Server.Controllers
             return Ok();
         }
 
-        [HttpPost("set_admin_status")]
+        [HttpPost("set_admin")]
         public IActionResult SetAdminStatus([FromBody] AdminStatus request)
         {
             var authToken = request.Token;

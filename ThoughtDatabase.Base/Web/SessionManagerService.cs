@@ -76,5 +76,17 @@ namespace ThoughtDatabase.Web
 				}
 			}
 		}
-	}
+
+		public async Task<HttpResponseMessage?> Register(string username, string password, bool isAdmin)
+        {
+            var request = new UserRequest(username, password, false);
+            var response = await _httpClient.PostAsJsonAsync($"{BaseUrl}/api/user/register", request);
+			if (isAdmin && response.IsSuccessStatusCode && this.IsAdmin)
+			{
+				var adminStatus = new AdminStatus(AuthToken, true, username);
+				response = await _httpClient.PostAsJsonAsync($"{BaseUrl}/api/user/set_admin", adminStatus);
+			}
+			return response;
+        }
+    }
 }

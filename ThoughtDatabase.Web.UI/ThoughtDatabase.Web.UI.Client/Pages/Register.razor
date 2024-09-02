@@ -1,0 +1,81 @@
+﻿@page "/register"
+@using ThoughtDatabase.Web.UI.Client.Layout
+@inject NavigationManager _nav
+@inject Blazored.LocalStorage.ILocalStorageService _localStorage
+@inject SessionManagerService _session
+
+<PageTitle>Registration</PageTitle>
+
+<h1>Registration</h1>
+
+<table>
+	<tr>
+		<td>
+			<label for="username">Username</label>
+		</td>
+		<td>
+			<input id="username" type="text" @bind="username" />
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<label for="password">Password</label>
+		</td>
+		<td>
+			<input id="password" type="password" @bind="password" />
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<label for="isAdmin">Admin</label>
+		</td>
+		<td>
+			<input id="isAdmin" type="checkbox" @bind="isAdmin" disabled="@(!_session.IsAdmin)" />
+		</td>
+	</tr>
+</table>
+
+<p>
+	<button class="btn btn-primary" @onclick="RegisterClicked">Register</button>
+</p>
+<p>
+	@registrationStatus
+</p>
+<AntiforgeryToken />
+
+@code {
+	string registrationStatus = "";
+	string? username, password;
+	bool isAdmin;
+	private async Task RegisterClicked(MouseEventArgs e)
+	{
+		registrationStatus = "Registering...";
+		// Submit login request, then set loggedIn to "Logged in" or "Login failed"
+		// If login is successful, save the token in local storage
+		// Then navigate to the home page
+
+		if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+		{
+			registrationStatus = "Username and password are required";
+			return;
+		}
+
+		var response = await _session.Register(username, password, isAdmin);
+		if (response == null)
+		{
+			registrationStatus = "Registration failed";
+			return;
+		}
+		bool result = response.IsSuccessStatusCode;
+		if (result)
+		{
+			registrationStatus = "Registration Successful!";
+		}
+		else
+		{
+			registrationStatus = await response.Content.ReadAsStringAsync();
+			if (string.IsNullOrEmpty(registrationStatus))
+				registrationStatus = response.ReasonPhrase;
+		}
+	}
+}

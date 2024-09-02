@@ -8,6 +8,30 @@
       "DateOfRegistration": "2024-09-01T23:59:54.3790215-04:00",
       "Datasets": [],
       "AuthTokens": []
+    },
+    {
+      "Username": "dt2",
+      "Password": "dt",
+      "IsAdmin": false,
+      "DateOfRegistration": "2024-09-02T16:10:57.3614809-04:00",
+      "Datasets": [],
+      "AuthTokens": []
+    },
+    {
+      "Username": "dt3",
+      "Password": "dt",
+      "IsAdmin": false,
+      "DateOfRegistration": "2024-09-02T16:13:02.5673387-04:00",
+      "Datasets": [],
+      "AuthTokens": []
+    },
+    {
+      "Username": "dt5",
+      "Password": "dt",
+      "IsAdmin": false,
+      "DateOfRegistration": "2024-09-02T16:25:29.4998691-04:00",
+      "Datasets": [],
+      "AuthTokens": []
     }
   ]
 }
