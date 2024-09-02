@@ -19,15 +19,11 @@ Welcome to your new app.
 	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
 		string? tkn = await _localStorage.GetItemAsync<string>("token");
-		if (string.IsNullOrWhiteSpace(tkn))
+		if (!_session.IsAuthenticated)
 		{
 			_nav.NavigateTo("login");
+			return;
 		}
-		else if (!await _session.AuthenticateToken(tkn))
-		{
-			_nav.NavigateTo("login");
-		}
-		await MainLayout.Refresh();
 		base.OnAfterRender(firstRender);
 	}
 }
