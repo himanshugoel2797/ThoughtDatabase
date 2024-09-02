@@ -1,0 +1,68 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager _nav
+@inject SessionManagerService _session
+
+<CascadingValue Value="this">
+    <div class="page">
+        <div class="sidebar">
+            <NavMenu />
+        </div>
+
+        <main>
+            <div class="top-row px-4">
+                <div style="float:left;width:50%">
+                    <label>@_session.Username</label>
+                </div>
+                <div style="float:right;width:50%">
+                    <button style="float:right" class="btn btn-primary" @onclick="LoginClicked">@loginButton</button>
+                    <button style="float:right;margin-right:2%" class="btn btn-primary">Register</button>
+                </div>
+            </div>
+
+            <article class="content px-4">
+                @Body
+            </article>
+        </main>
+    </div>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+</CascadingValue>
+
+@code
+{
+    bool loggedIn = false;
+    string loginButton = "Login";
+    public async Task Refresh()
+    {
+        if (_session.IsAuthenticated)
+		{
+			loggedIn = true;
+            loginButton = "Logout";
+		}
+		else
+		{
+			loggedIn = false;
+            loginButton = "Login";
+		}
+        await InvokeAsync(() => StateHasChanged());
+    }
+
+    private async Task LoginClicked(MouseEventArgs e)
+	{
+		if (loggedIn)
+		{
+			await _session.Logout();
+			loginButton = "Login";
+			loggedIn = false;
+		}
+		else
+		{
+			_nav.NavigateTo("login");
+		}
+		await InvokeAsync(() => StateHasChanged());
+	}
+}

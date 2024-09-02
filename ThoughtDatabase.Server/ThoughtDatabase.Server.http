@@ -1,0 +1,6 @@
+@ThoughtDatabase.Server_HostAddress = http://localhost:5191
+
+GET {{ThoughtDatabase.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

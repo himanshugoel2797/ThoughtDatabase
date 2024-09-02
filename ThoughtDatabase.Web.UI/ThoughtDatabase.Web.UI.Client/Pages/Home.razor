@@ -1,0 +1,28 @@
+﻿@page "/"
+@inject NavigationManager _nav
+@inject Blazored.LocalStorage.ILocalStorageService _localStorage
+@inject SessionManagerService _session
+
+
+<PageTitle>Home</PageTitle>
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+@code
+{
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		string? tkn = await _localStorage.GetItemAsync<string>("token");
+		if (string.IsNullOrWhiteSpace(tkn))
+		{
+			_nav.NavigateTo("login");
+		}
+		else if (!await _session.AuthenticateToken(tkn))
+		{
+			_nav.NavigateTo("login");
+		}
+		base.OnAfterRender(firstRender);
+	}
+}

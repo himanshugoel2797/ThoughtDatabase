@@ -1,0 +1,83 @@
+﻿@page "/login"
+@using ThoughtDatabase.Web.UI.Client.Layout
+@inject NavigationManager _nav
+@inject Blazored.LocalStorage.ILocalStorageService _localStorage
+@inject SessionManagerService _session
+
+<PageTitle>Login</PageTitle>
+
+<h1>Login</h1>
+
+<table>
+	<tr>
+		<td>
+			<label for="username">Username</label>
+		</td>
+		<td>
+			<input id="username" type="text" @bind="username" />
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<label for="password">Password</label>
+		</td>
+		<td>
+			<input id="password" type="password" @bind="password" />
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<label for="rememberMe">Remember Me</label>
+		</td>
+		<td>
+			<input id="rememberMe" type="checkbox" @bind="rememberMe" />
+		</td>
+	</tr>
+</table>
+
+<p>
+	<button class="btn btn-primary" @onclick="LoginClicked">Login</button>
+</p>
+<p>
+	@loggedIn
+</p>
+<AntiforgeryToken />
+
+@code {
+
+	[CascadingParameter]
+	public MainLayout MainLayout { get; set; }
+
+	string? loggedIn = "Nope";
+	string? username, password;
+	bool rememberMe;
+	private async Task LoginClicked(MouseEventArgs e)
+	{
+		loggedIn = "Logging in...";
+		// Submit login request, then set loggedIn to "Logged in" or "Login failed"
+		// If login is successful, save the token in local storage
+		// Then navigate to the home page
+
+		if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+		{
+			loggedIn = "Username and password are required";
+			return;
+		}
+
+		bool result = await _session.Login(username, password, rememberMe);
+		if (result)
+		{
+			loggedIn = "Logged in";
+			if (rememberMe)
+			{
+				await _localStorage.SetItemAsync("token", _session.AuthToken);
+			}
+			await MainLayout.Refresh();
+			_nav.NavigateTo("/");
+		}
+		else
+		{
+			loggedIn = "Login failed";
+		}
+	}
+}
