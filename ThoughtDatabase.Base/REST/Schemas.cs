@@ -18,5 +18,7 @@ namespace ThoughtDatabase.REST
 
 	public record RegisterAppRequest(string Token, string Name) : AuthRequired(Token);
 
+	public record ThoughtDatasetListRequest(string Token, int Skip = 0, int? Count = null) : AuthRequired(Token);
+
 	public record ThoughtDatasetCreateInfo(string Token, string Name, string? Description) : AuthRequired(Token);
 }

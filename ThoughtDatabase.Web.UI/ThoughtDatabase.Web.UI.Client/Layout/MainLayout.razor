@@ -14,7 +14,8 @@
                     <label>@_session.Username</label>
                 </div>
                 <div style="float:right;width:50%">
-                    <button style="float:right" class="btn btn-primary" @onclick="LoginClicked">@loginButton</button>
+                    <button style="float:right" class ="btn btn-primary" @onclick="@(()=>_nav.NavigateTo("home"))"><Blazicon Svg="GoogleMaterialOutlinedIcon.Settings" /></button>
+                    <button style="float:right;margin-right:2%" class="btn btn-primary" @onclick="LoginClicked">@loginButton</button>
                     <button style="float:right;margin-right:2%" class="btn btn-primary" @onclick="@(()=>_nav.NavigateTo("register"))">Register</button>
                 </div>
             </div>

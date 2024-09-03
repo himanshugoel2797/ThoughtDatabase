@@ -142,7 +142,37 @@ namespace ThoughtDatabase.Server.Controllers
 		}
 
         [HttpGet("get_datasets")]
-		public IActionResult GetDatasets([FromQuery] string token)
+		public IActionResult GetDatasets([FromQuery] ThoughtDatasetListRequest request)
+		{
+            var authToken = request.Token;
+			if (string.IsNullOrWhiteSpace(authToken))
+			{
+				return BadRequest("Auth token must be provided");
+			}
+
+			if (!ServiceUserManager.Instance.AuthenticateToken(authToken))
+			{
+				return Unauthorized();
+			}
+
+            var user = ServiceUserManager.Instance.GetUser(authToken);
+			if (user == null)
+            {
+				return BadRequest("Failed to get user");
+			}
+
+            int count = request.Count ?? user.Datasets.Count;
+            if (count > user.Datasets.Count) count = user.Datasets.Count;
+			var datasets = user.Datasets.GetRange(request.Skip, count).Select(a => a.Name).ToArray();
+			if (datasets == null)
+			{
+				return BadRequest("Failed to get datasets");
+			}
+			return Ok(datasets);
+		}
+
+        [HttpGet("get_dataset_count")]
+		public IActionResult GetDatasetCount([FromQuery] string token)
 		{
 			var authToken = token;
 			if (string.IsNullOrWhiteSpace(authToken))
@@ -155,12 +185,13 @@ namespace ThoughtDatabase.Server.Controllers
 				return Unauthorized();
 			}
 
-			var datasets = ServiceUserManager.Instance.GetUser(authToken)?.Datasets.Select(a => a.Name).ToArray();
-			if (datasets == null)
+			var user = ServiceUserManager.Instance.GetUser(authToken);
+			if (user == null)
 			{
-				return BadRequest("Failed to get datasets");
+				return BadRequest("Failed to get user");
 			}
-			return Ok(datasets);
+
+			return Ok(user.Datasets.Count);
 		}
 	}
 }

@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Json;
+﻿using Microsoft.AspNetCore.Components;
+using System.Net.Http.Json;
 using System.Text.Json;
 using ThoughtDatabase.REST;
 
@@ -89,10 +90,26 @@ namespace ThoughtDatabase.Web
 			return response;
 		}
 
-		public async Task<string[]> GetDatasetNames()
+		public async Task<string[]> GetDatasetNames(NavigationManager _nav, int skip = 0, int? count = null)
 		{
-			var response = await _httpClient.GetFromJsonAsync<string[]>($"{BaseUrl}/api/user/get_datasets?token={AuthToken}");
+			var url = _nav.GetUriWithQueryParameters($"{BaseUrl}/api/user/get_datasets", new Dictionary<string, object?>
+			{
+				{ "token", AuthToken },
+				{ "skip", skip },
+				{ "count", count }
+			});
+			var response = await _httpClient.GetFromJsonAsync<string[]>(url);
 			return response ?? Array.Empty<string>();
+		}
+
+		public async Task<int> GetDatasetCount(NavigationManager _nav)
+		{
+			var url = _nav.GetUriWithQueryParameters($"{BaseUrl}/api/user/get_dataset_count", new Dictionary<string, object?>
+			{
+				{ "token", AuthToken }
+			});
+			var response = await _httpClient.GetFromJsonAsync<int>(url);
+			return response;
 		}
 
 		public async Task<bool> CreateDataset(string name, string description)

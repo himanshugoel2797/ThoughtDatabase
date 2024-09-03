@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using Microsoft.AspNetCore.Components.QuickGrid
 @using ThoughtDatabase.Web.UI.Client.Layout
 @inject NavigationManager _nav
 @inject Blazored.LocalStorage.ILocalStorageService _localStorage
@@ -7,90 +8,81 @@
 
 <PageTitle>Home</PageTitle>
 
+<h3>Datasets</h3>
+<div class="grid">
+	<QuickGrid ItemsProvider="@DatasetInfoProvider" Virtualize="true" @ref="datasetInfoGrid">
+		<PropertyColumn Title="Name" Property="@(c => c.Name)" />
+		<PropertyColumn Title="Description" Property="@(c => c.Description)" />
+		<TemplateColumn Title="Actions">
+			<button class="btn btn-primary" @onclick="@(()=>OnClickDataset(context))">Explore</button>
+		</TemplateColumn>
+	</QuickGrid>
+</div>
+<table>
+	<tr>
+		<td>
+			<input type="text" @bind="_newDatasetName" />
+		</td>
+		<td>
+			<input type="text" @bind="_newDatasetDesc" />
+		</td>
+		<td>
+			<button class="btn btn-primary" @onclick="@OnClickCreateDataset">New Dataset</button>
+		</td>
+	</tr>
+</table>
 
-@if (_datasets != null)
-{
-	<h3>Datasets</h3>
-	<table style="width:100%">
-		<thead>
-			<tr>
-				<th>Name</th>
-				<th>Description</th>
-				<th>Actions</th>
-			</tr>
-		</thead>
-		<tbody>
-			@foreach (var dataset in _datasets)
-			{
-				<tr>
-					<td>
-						@dataset
-					</td>
-					<td>
-						Description
-					</td>
-					<td>
-						<button class="btn btn-primary" @onclick="@(async ()=>await OnClickDataset(dataset))">Explore</button>
-					</td>
-				</tr>
-			}
 
-			<tr>
-				<td>
-					<input type="text" @bind="_newDatasetName" />
-				</td>
-				<td>
-					<input type="text" @bind="_newDatasetDesc" />
-				</td>
-				<td>
-					<button class="btn btn-primary" @onclick="@OnClickCreateDataset">New Dataset</button>
-				</td>
-			</tr>
-		</tbody>
-	</table>
-}
-else
-{
-	@if (_session.IsAuthenticated)
-	{
-		<p>Loading datasets...</p>
-	}
-	else
-	{
-		<p>Not logged in.</p>
-	}
-}
 
 @code
 {
-	private string[]? _datasets;
-
 	[CascadingParameter]
 	public MainLayout MainLayout { get; set; }
+	QuickGrid<DatasetInfo> datasetInfoGrid;
+	private GridItemsProvider<DatasetInfo>? DatasetInfoProvider;
 
 	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
 		string? tkn = await _localStorage.GetItemAsync<string>("token");
 		if (!_session.IsAuthenticated)
 		{
-			if (!string.IsNullOrWhiteSpace(tkn) && await _session.AuthenticateToken(tkn))
+			if (!(!string.IsNullOrWhiteSpace(tkn) && await _session.AuthenticateToken(tkn)))
 			{
-				await InvokeAsync(() => StateHasChanged());
-				await MainLayout.Refresh();
+				_nav.NavigateTo("login");
 				return;
 			}
-
-			_nav.NavigateTo("login");
-			return;
+			else
+			{
+				await MainLayout.Refresh();
+			}
 		}
-		else
+
+		// Get the datasets
+		if (DatasetInfoProvider == null)
 		{
-			// Get the datasets
-			_datasets = await _session.GetDatasetNames();
+			DatasetInfoProvider = async req =>
+			{
+				var res = await _session.GetDatasetNames(_nav, req.StartIndex, req.Count);
+				var resCount = await _session.GetDatasetCount(_nav);
+
+				var resFinal = new DatasetInfo[res.Count()];
+				for (int i = 0; i < res.Count(); i++)
+				{
+					resFinal[i] = new DatasetInfo
+						{
+							Name = res[i]
+						};
+				}
+				return GridItemsProviderResult.From(resFinal, resCount);
+			};
+			await datasetInfoGrid.RefreshDataAsync();
 			await InvokeAsync(() => StateHasChanged());
 		}
+		//_datasets = await _session.GetDatasetNames();
 		base.OnAfterRender(firstRender);
+
 	}
+
 
 	private string _newDatasetName = "", _newDatasetDesc = "";
 	private async Task OnClickCreateDataset(MouseEventArgs e)
@@ -102,14 +94,22 @@ else
 
 		if (await _session.CreateDataset(_newDatasetName, _newDatasetDesc))
 		{
-			_datasets = await _session.GetDatasetNames();
 			_newDatasetName = "";
 			_newDatasetDesc = "";
+			await datasetInfoGrid.RefreshDataAsync();
 		}
 	}
 
-	private async Task OnClickDataset(string name)
+	private void OnClickDataset(DatasetInfo info)
 	{
-		
+		//Switch to the dataset page and pass the dataset name
+		_nav.NavigateTo($"dataset/{info.Name}");
+	}
+
+
+	private class DatasetInfo
+	{
+		public required string Name { get; set; }
+		public string? Description { get; set; }
 	}
 }

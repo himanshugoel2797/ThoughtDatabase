@@ -15,10 +15,29 @@
             "BaseDirectory": "Test"
           },
           "Collections": []
+        },
+        {
+          "Name": "data2",
+          "Description": "lol",
+          "Date": "2024-09-02T23:45:30.2010934-04:00",
+          "StorageProvider": {
+            "BaseDirectory": "data2"
+          },
+          "Collections": []
+        },
+        {
+          "Name": "Test3",
+          "Description": "a",
+          "Date": "2024-09-02T23:49:39.8533829-04:00",
+          "StorageProvider": {
+            "BaseDirectory": "Test3"
+          },
+          "Collections": []
         }
       ],
       "AuthTokens": [
-        "514cbbaf-c4c5-4713-8b19-142746a4bc30"
+        "514cbbaf-c4c5-4713-8b19-142746a4bc30",
+        "97f92bd9-b5d6-422f-ae42-0edbaa5c96cd"
       ]
     }
   ]
